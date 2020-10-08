@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/seattle-area-tolls.github.io/precache-manifest.9af05e65776fb2cd7688cf961f35d0ca.js"
+  "/seattle-area-tolls.github.io/precache-manifest.919c1ca512c953e62d6eddf10ba81f6e.js"
 );
 
 self.addEventListener('message', (event) => {
