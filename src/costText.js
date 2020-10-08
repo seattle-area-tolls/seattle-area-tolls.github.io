@@ -10,7 +10,7 @@ const textToHour = text => {
 };
 
 const buildTable = async (url, firstColName, secondColName) => {
-  const raw = await (await fetch(`https://api.codetabs.com/v1/proxy?quest=${url}`)).text();
+  const raw = await (await fetch(`https://cors-anywhere.herokuapp.com/${url}`)).text();
   const converted = HtmlTableToJson.parse(raw).results;
   const hourToPriceRegular = Array.from(Array(24));
   const hourToPriceWeekendHoliday = Array.from(Array(24));
