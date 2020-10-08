@@ -9,7 +9,7 @@ function App() {
       setText(await getText("520"))
     }
     fetchData();
-  });
+  }, []);
 
   return (
     <div className="App">

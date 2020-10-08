@@ -10,7 +10,6 @@ const textToHour = text => {
 };
 
 const buildTable = async (url, firstColName, secondColName) => {
-  
   const raw = await (await fetch(`https://api.codetabs.com/v1/proxy?quest=${url}`)).text();
   const converted = HtmlTableToJson.parse(raw).results;
   const hourToPriceRegular = Array.from(Array(24));
@@ -45,31 +44,34 @@ const buildTable = async (url, firstColName, secondColName) => {
   return { hourToPriceRegular, hourToPriceWeekendHoliday };
 };
 
-const buildTables = async () => {
-  const {
-    hourToPriceRegular: road520Regular,
-    hourToPriceWeekendHoliday: road520Special
-  } = await buildTable(
-    "https://wsdot.wa.gov/Tolling/520/520tollrates.htm",
-    "Monday - Friday",
-    "Weekends and Holidays**"
-  );
-
-  const {
-    hourToPriceRegular: road99Regular,
-    hourToPriceWeekendHoliday: road99Special
-  } = await buildTable(
-    "https://wsdot.wa.gov/tolling/sr-99-tunnel-toll-rates",
-    "Monday through Friday",
-    "Weekends"
-  );
-
-  return {
-    road520Regular,
-    road520Special,
-    road99Regular,
-    road99Special
-  };
+const buildTables = async (type) => {
+  if(type==="520"){
+    const {
+      hourToPriceRegular,
+      hourToPriceWeekendHoliday,
+    } = await buildTable(
+      "https://wsdot.wa.gov/Tolling/520/520tollrates.htm",
+      "Monday - Friday",
+      "Weekends and Holidays**"
+    );
+    return {
+      hourToPriceRegular,
+      hourToPriceWeekendHoliday,
+    }
+  } else {
+    const {
+      hourToPriceRegular,
+      hourToPriceWeekendHoliday
+    } = await buildTable(
+      "https://wsdot.wa.gov/tolling/sr-99-tunnel-toll-rates",
+      "Monday through Friday",
+      "Weekends"
+    );
+    return {
+      hourToPriceRegular,
+      hourToPriceWeekendHoliday,
+    }
+  }
 };
 
 const isSpecialDay = (today = new Date()) => {
@@ -91,29 +93,20 @@ const isSpecialDay = (today = new Date()) => {
 
 const getRelevantTable = async type => {
   const {
-    road520Regular,
-    road520Special,
-    road99Regular,
-    road99Special
-  } = await buildTables();
+    hourToPriceRegular,
+    hourToPriceWeekendHoliday,
+  } = await buildTables(type);
 
-  if (type == "520") {
-    if (isSpecialDay()) {
-      return road520Special;
-    } else {
-      return road520Regular;
-    }
+  if (isSpecialDay()) {
+    return hourToPriceWeekendHoliday;
   } else {
-    if (isSpecialDay()) {
-      return road99Regular;
-    } else {
-      return road99Special;
-    }
+    return hourToPriceRegular;
   }
 };
 
+let textAns = null;
 export const getText = async type => {
-  
+  if(textAns) return textAns;
   const today = new Date();
   const table = await getRelevantTable(type);
   let ans = "";
