@@ -1,0 +1,152 @@
+import HtmlTableToJson from 'html-table-to-json';
+import Holidays from 'date-holidays';
+const textToHour = text => {
+  const nText = text.toLowerCase().trim();
+  if (nText === "midnight") return 0;
+  const parts = nText.split(" ");
+  let hour = parseInt(parts[0]);
+  if (parts[1] == "p.m.") hour += 12;
+  return hour;
+};
+
+const buildTable = async (url, firstColName, secondColName) => {
+  
+  const raw = await (await fetch(`https://api.codetabs.com/v1/proxy?quest=${url}`)).text();
+  const converted = HtmlTableToJson.parse(raw).results;
+  const hourToPriceRegular = Array.from(Array(24));
+  const hourToPriceWeekendHoliday = Array.from(Array(24));
+  [
+    {
+      table: converted[0],
+      col: firstColName,
+      ans: hourToPriceRegular
+    },
+    {
+      table: converted[1],
+      col: secondColName,
+      ans: hourToPriceWeekendHoliday
+    }
+  ].forEach(({ table, col, ans }) => {
+    table.forEach(row => {
+      const timeParts = row[col].split("to");
+      const price = row["Good To Go! Pass"];
+      if (timeParts.length == 1 && timeParts[0] === "All day") {
+        for (var j = 0; j < 24; j++) ans[j] = price;
+        return;
+      }
+      let i = textToHour(timeParts[0]);
+      while (i != textToHour(timeParts[1])) {
+        ans[i] = price;
+        i = (i + 1) % 24;
+      }
+    });
+  });
+
+  return { hourToPriceRegular, hourToPriceWeekendHoliday };
+};
+
+const buildTables = async () => {
+  const {
+    hourToPriceRegular: road520Regular,
+    hourToPriceWeekendHoliday: road520Special
+  } = await buildTable(
+    "https://wsdot.wa.gov/Tolling/520/520tollrates.htm",
+    "Monday - Friday",
+    "Weekends and Holidays**"
+  );
+
+  const {
+    hourToPriceRegular: road99Regular,
+    hourToPriceWeekendHoliday: road99Special
+  } = await buildTable(
+    "https://wsdot.wa.gov/tolling/sr-99-tunnel-toll-rates",
+    "Monday through Friday",
+    "Weekends"
+  );
+
+  return {
+    road520Regular,
+    road520Special,
+    road99Regular,
+    road99Special
+  };
+};
+
+const isSpecialDay = (today = new Date()) => {
+  if (today.getDay() === 6 || today.getDay() === 0) {
+    return true;
+  }
+
+  var hd = new Holidays('US')
+  const applicable = [
+      "New Years",
+      "Memorial Day",
+      "Independence Day",
+      "Labor Day",
+      "Thanksgiving",
+      "Christmas Day"
+    ];
+  return hd.isHoliday(today) && applicable.indexOf(hd.isHoliday(today).name) >= 0;
+};
+
+const getRelevantTable = async type => {
+  const {
+    road520Regular,
+    road520Special,
+    road99Regular,
+    road99Special
+  } = await buildTables();
+
+  if (type == "520") {
+    if (isSpecialDay()) {
+      return road520Special;
+    } else {
+      return road520Regular;
+    }
+  } else {
+    if (isSpecialDay()) {
+      return road99Regular;
+    } else {
+      return road99Special;
+    }
+  }
+};
+
+export const getText = async type => {
+  
+  const today = new Date();
+  const table = await getRelevantTable(type);
+  let ans = "";
+
+  if (type === "520") {
+    ans += "The 520 bridge costs ";
+  } else {
+    ans += "The 99 tunnel costs ";
+  }
+
+  ans += table[today.getHours()];
+  ans += ".";
+
+  let nextHour = (today.getHours()) % 24;
+  let nextChangeFound = false;
+  while(!nextChangeFound) {
+    nextHour = (nextHour + 1) % 24
+    if(nextHour === today.getHours()){
+      return ans;
+    }
+
+    nextChangeFound = table[today.getHours()] !== table[nextHour];
+  }
+
+  ans +=
+      " It will cost " +
+      table[nextHour] +
+      " at " +
+      (nextHour == 0 ? "12" : nextHour % 12) +
+      " " +
+      (nextHour < 12 ? "AM" : "PM") +
+      ".";
+  
+  return ans;
+};
+
