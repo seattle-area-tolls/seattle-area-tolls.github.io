@@ -2,26 +2,19 @@ import React, {useEffect, useState} from 'react';
 import {getText} from './costText';
 import './App.css';
 
-function Road520() {
+function Road({name}) {
   const [text, setText] = useState("");
   useEffect(() => {
     async function fetchData() {
-      setText(await getText("520"))
+      setText(await getText(name))
     }
-    fetchData();
-  }, []);
+    let interval = setInterval(() => {
+      fetchData();
+    }, 60 * 1000);
 
-  return <>{text}</>
-}
-
-function Road99() {
-  const [text, setText] = useState("");
-  useEffect(() => {
-    async function fetchData() {
-      setText(await getText("99"))
-    }
     fetchData();
-  }, []);
+    return () => clearInterval(interval);
+  }, [name]);
 
   return <>{text}</>
 }
@@ -48,20 +41,17 @@ function App() {
   return (
     <div className="App">
       <div className="text">
-      {/* <Road520/> */}
       {(() => {
         switch(hash) {
           case "#520":
-            return <Road520/>;
+            return <Road name="520"/>;
           case "#99":
-            return <Road99/>;
+            return <Road name="99"/>;
           default: 
             return <Pick/>;
         }
         })()
       }
-      {hash === "520" && <Road520/>}
-      {hash === "99" && <Road99/>}
       </div>
     </div>
   );
