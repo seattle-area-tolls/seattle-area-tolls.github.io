@@ -1,5 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {getText} from './costText';
+import Div100vh from 'react-div-100vh'
+
 import './App.css';
 
 function Road({name}) {
@@ -32,7 +34,7 @@ function Pick() {
 
 function App() {
   return (
-    <div className="App">
+    <Div100vh className="App">
       <div className="text">
       {(() => {
         switch(window.location.search) {
@@ -46,7 +48,7 @@ function App() {
         })()
       }
       </div>
-    </div>
+    </Div100vh>
   );
 }
 
