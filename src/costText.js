@@ -1,9 +1,9 @@
 
 import Holidays from 'date-holidays';
-const data = require('./data/data.json');
+import data from './data/data';
 
 
-const isSpecialDay = (today = new Date()) => {
+const isSpecialDay = (today) => {
   if (today.getDay() === 6 || today.getDay() === 0) {
     return true;
   }
@@ -20,13 +20,13 @@ const isSpecialDay = (today = new Date()) => {
   return hd.isHoliday(today) && applicable.indexOf(hd.isHoliday(today).name) >= 0;
 };
 
-const getRelevantTable = async type => {
+const getRelevantTable = async (type, today = new Date()) => {
   const {
     hourToPriceRegular,
     hourToPriceWeekendHoliday,
   } = data[type];
 
-  if (isSpecialDay()) {
+  if (isSpecialDay(today)) {
     return hourToPriceWeekendHoliday;
   } else {
     return hourToPriceRegular;
@@ -38,6 +38,7 @@ export const getText = async type => {
   if(textAns) return textAns;
   const today = new Date();
   const table = await getRelevantTable(type);
+  let nextTable = table;
   let ans = "";
 
   if (type === "520") {
@@ -52,12 +53,19 @@ export const getText = async type => {
   let nextHour = (today.getHours()) % 24;
   let nextChangeFound = false;
   while(!nextChangeFound) {
-    nextHour = (nextHour + 1) % 24
+    nextHour = (nextHour + 1);
+    if(nextHour >= 24) {
+      nextHour = nextHour%24;
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      nextTable = getRelevantTable(type, tomorrow);
+    }
+
     if(nextHour === today.getHours()){
       return ans;
     }
 
-    nextChangeFound = table[today.getHours()] !== table[nextHour];
+    nextChangeFound = table[today.getHours()] !== nextTable[nextHour];
   }
 
   ans +=
