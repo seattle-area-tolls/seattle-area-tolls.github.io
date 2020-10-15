@@ -22,30 +22,23 @@ function Road({name}) {
 function Pick() {
   return <ul>
     <li>
-      <a href="#99">99</a>
+      <a href="?99">99</a>
     </li>
     <li>
-      <a href="#520">520</a>
+      <a href="?520">520</a>
     </li>
   </ul>;
 }
 
 function App() {
-  const [hash, setHash] = useState(window.location.hash);
-  useEffect(() => {
-    window.addEventListener("hashchange", () => {
-      setHash(window.location.hash)
-    }, false)
-  }, []);
-
   return (
     <div className="App">
       <div className="text">
       {(() => {
-        switch(hash) {
-          case "#520":
+        switch(window.location.search) {
+          case "?520":
             return <Road name="520"/>;
-          case "#99":
+          case "?99":
             return <Road name="99"/>;
           default: 
             return <Pick/>;
